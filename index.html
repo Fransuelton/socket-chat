@@ -55,16 +55,27 @@
       #messages > li:nth-child(odd) {
         background: #efefef;
       }
+      .username {
+        font-weight: bold;
+        color: #2563eb;
+        margin-right: 8px;
+      }
     </style>
   </head>
   <body>
     <ul id="messages"></ul>
     <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
+      <input id="input" autocomplete="off" placeholder="Digite sua mensagem..." /><button>Enviar</button>
     </form>
   </body>
-  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script>
+    // 1. Verifica se o usuário está "logado"
+    const username = localStorage.getItem('chat:username');
+    if (!username) {
+      window.location.href = '/login';
+    }
+
     const socket = io();
 
     const form = document.getElementById("form");
@@ -74,14 +85,29 @@
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       if (input.value) {
-        socket.emit("chat message", input.value);
+        // 2. Envia um objeto com o usuário e o texto
+        socket.emit("chat message", {
+          user: username,
+          text: input.value
+        });
         input.value = "";
       }
     });
 
-    socket.on("chat message", (msg) => {
+    // 3. Recebe e exibe a mensagem com o nome do usuário
+    socket.on("chat message", (data) => {
       const item = document.createElement("li");
-      item.textContent = msg;
+      
+      const userSpan = document.createElement("span");
+      userSpan.className = "username";
+      userSpan.textContent = data.user + ":";
+      
+      const textSpan = document.createElement("span");
+      textSpan.textContent = data.text;
+
+      item.appendChild(userSpan);
+      item.appendChild(textSpan);
+      
       messages.appendChild(item);
       window.scrollTo(0, document.body.scrollHeight);
     });
